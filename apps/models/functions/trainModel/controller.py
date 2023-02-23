@@ -1,4 +1,4 @@
-from apps.models.functions.trainModel.Models import *
+from apps.models.functions.trainModel.modeling import *
 from django.core.cache import cache
 class trainModel:
     def __init__(self,filename,data,modelname,hyperparams):

@@ -6,7 +6,6 @@ from django.utils.decorators import method_decorator
 from .models import Api_test1, Api_test2
 from .serializers import Api_test1_Serializer, Api_test2_Serializer
 from django.core.cache import cache
-import redis
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -37,7 +36,6 @@ class uploadDataView(View): # 클래스형 뷰 작성
                 'filename' : filename
             }
             cache.set(f'{filename}',cachedata)
-            print(cache.get(f'{filename}'))
 
             return JsonResponse({"success" : 'True'})
         except Exception as e:
@@ -47,19 +45,13 @@ class uploadDataView(View): # 클래스형 뷰 작성
 @method_decorator(csrf_exempt, name = 'dispatch')
 class handleDataView(View):
     def get(self,request):
-        print(request.headers)
         filename = request.GET.get('filename')
         trainratio = float(request.GET.get('trainratio'))
-        # print(request.GET)
-        # #print(request)
-        # print(filename)
-        # print(trainratio)
-        Data = cache.get(f'{filename}')['file']
-        print(Data)
-        df = pd.read_csv(Data)
-        x_data = df
-        y_data = df
-        x_train, x_test, y_train, y_test = train_test_split(df, df, train_size = trainratio)
-        cache.set_many({'x_train' : x_train, 'x_test' : x_test, 'y_train' : y_train, 'y_test' : y_test})
-        return JsonResponse({'train' : len(x_train), 'test' : len(x_test), 'success' : 'True'})
+        file = cache.get(f'{filename}')['file']
+        df = pd.read_csv(file)
+        x_data = df.drop(columns='cancer')
+        y_data = df['cancer'] #임시로 y값 설정
+        x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, train_size = trainratio)
+        cache.set(f'{filename}_data', {'x_train': x_train, 'x_test': x_test, 'y_train': y_train, 'y_test': y_test})
+        return JsonResponse({'train': len(x_train), 'test': len(x_test), 'success': 'True'})
 
